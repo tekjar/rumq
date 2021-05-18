@@ -89,6 +89,7 @@ pub enum QoS {
 ///
 /// http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html#_Figure_2.2_-
 /// ```
+#[derive(Clone)]
 pub struct FixedHeader {
     /// First byte of the stream. Used to identify packet types and
     /// several flags

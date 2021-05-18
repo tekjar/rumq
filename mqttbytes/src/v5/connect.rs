@@ -7,7 +7,7 @@ use bytes::{Buf, Bytes};
 #[derive(Debug, Clone, PartialEq)]
 pub struct Connect {
     /// Mqtt protocol version
-    protocol: Protocol,
+    pub protocol: Protocol,
     /// Mqtt keep alive time
     pub keep_alive: u16,
     /// Client Id

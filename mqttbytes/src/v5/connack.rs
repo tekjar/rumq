@@ -36,7 +36,7 @@ pub enum ConnectReturnCode {
 pub struct ConnAck {
     pub session_present: bool,
     pub code: ConnectReturnCode,
-    pub properties: Option<ConnAckProperties>,
+    pub properties: ConnAckProperties,
 }
 
 impl ConnAck {
@@ -44,7 +44,7 @@ impl ConnAck {
         ConnAck {
             code,
             session_present,
-            properties: None,
+            properties: Default::default(),
         }
     }
 
@@ -52,11 +52,9 @@ impl ConnAck {
         let mut len = 1  // session present
                         + 1; // code
 
-        if let Some(properties) = &self.properties {
-            let properties_len = properties.len();
-            let properties_len_len = len_len(properties_len);
-            len += properties_len_len + properties_len;
-        }
+        let properties_len = self.properties.len();
+        let properties_len_len = len_len(properties_len);
+        len += properties_len_len + properties_len;
 
         len
     }
@@ -87,15 +85,13 @@ impl ConnAck {
         buffer.put_u8(self.session_present as u8);
         buffer.put_u8(self.code as u8);
 
-        if let Some(properties) = &self.properties {
-            properties.write(buffer)?;
-        }
+        self.properties.write(buffer)?;
 
         Ok(1 + count + len)
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Default, Clone, PartialEq)]
 pub struct ConnAckProperties {
     pub session_expiry_interval: Option<u32>,
     pub receive_max: Option<u16>,
@@ -116,326 +112,233 @@ pub struct ConnAckProperties {
     pub authentication_data: Option<Bytes>,
 }
 
-impl ConnAckProperties {
-    pub fn new() -> ConnAckProperties {
-        ConnAckProperties {
-            session_expiry_interval: None,
-            receive_max: None,
-            max_qos: None,
-            retain_available: None,
-            max_packet_size: None,
-            assigned_client_identifier: None,
-            topic_alias_max: None,
-            reason_string: None,
-            user_properties: Vec::new(),
-            wildcard_subscription_available: None,
-            subscription_identifiers_available: None,
-            shared_subscription_available: None,
-            server_keep_alive: None,
-            response_information: None,
-            server_reference: None,
-            authentication_method: None,
-            authentication_data: None,
+trait PropLen {
+    fn l(&self) -> usize;
+}
+impl PropLen for u8 {
+    fn l(&self) -> usize {
+        1
+    }
+}
+impl PropLen for u16 {
+    fn l(&self) -> usize {
+        2
+    }
+}
+impl PropLen for u32 {
+    fn l(&self) -> usize {
+        4
+    }
+}
+impl PropLen for String {
+    fn l(&self) -> usize {
+        2 + self.len()
+    }
+}
+impl PropLen for Bytes {
+    fn l(&self) -> usize {
+        2 + self.len()
+    }
+}
+impl<T1: PropLen, T2: PropLen> PropLen for (T1, T2) {
+    fn l(&self) -> usize {
+        self.0.l() + self.1.l()
+    }
+}
+impl<T: PropLen> PropLen for Option<T> {
+    fn l(&self) -> usize {
+        match self {
+            Some(v) => 1 + v.l(),
+            None => 0,
         }
+    }
+}
+impl<T: PropLen> PropLen for Vec<T> {
+    fn l(&self) -> usize {
+        self.iter().map(|v| 1 + v.l()).sum()
+    }
+}
+
+trait PropPut {
+    fn put(&self, buffer: &mut BytesMut);
+}
+impl PropPut for u8 {
+    fn put(&self, buffer: &mut BytesMut) {
+        buffer.put_u8(*self)
+    }
+}
+impl PropPut for u16 {
+    fn put(&self, buffer: &mut BytesMut) {
+        buffer.put_u16(*self)
+    }
+}
+impl PropPut for u32 {
+    fn put(&self, buffer: &mut BytesMut) {
+        buffer.put_u32(*self)
+    }
+}
+impl PropPut for String {
+    fn put(&self, buffer: &mut BytesMut) {
+        write_mqtt_string(buffer, self)
+    }
+}
+impl PropPut for Bytes {
+    fn put(&self, buffer: &mut BytesMut) {
+        write_mqtt_bytes(buffer, self)
+    }
+}
+impl<T1: PropPut, T2: PropPut> PropPut for (T1, T2) {
+    fn put(&self, buffer: &mut BytesMut) {
+        self.0.put(buffer);
+        self.1.put(buffer);
+    }
+}
+trait PropPutWrite {
+    fn write(self, buffer: &mut BytesMut, property: PropertyType);
+}
+impl<T> PropPutWrite for &Option<T>
+where
+    T: PropPut,
+{
+    fn write(self, buffer: &mut BytesMut, property: PropertyType) {
+        if let Some(v) = self {
+            property.write(buffer);
+            v.put(buffer);
+        }
+    }
+}
+impl<T: PropPut> PropPutWrite for &Vec<T> {
+    fn write(self, buffer: &mut BytesMut, property: PropertyType) {
+        for v in self {
+            property.write(buffer);
+            v.put(buffer);
+        }
+    }
+}
+
+impl ConnAckProperties {
+    pub fn new() -> Self {
+        Self::default()
     }
 
     pub fn len(&self) -> usize {
-        let mut len = 0;
-
-        if let Some(_) = &self.session_expiry_interval {
-            len += 1 + 4;
-        }
-
-        if let Some(_) = &self.receive_max {
-            len += 1 + 2;
-        }
-
-        if let Some(_) = &self.max_qos {
-            len += 1 + 1;
-        }
-
-        if let Some(_) = &self.retain_available {
-            len += 1 + 1;
-        }
-
-        if let Some(_) = &self.max_packet_size {
-            len += 1 + 4;
-        }
-
-        if let Some(id) = &self.assigned_client_identifier {
-            len += 1 + 2 + id.len();
-        }
-
-        if let Some(_) = &self.topic_alias_max {
-            len += 1 + 2;
-        }
-
-        if let Some(reason) = &self.reason_string {
-            len += 1 + 2 + reason.len();
-        }
-
-        for (key, value) in self.user_properties.iter() {
-            len += 1 + 2 + key.len() + 2 + value.len();
-        }
-
-        if let Some(_) = &self.wildcard_subscription_available {
-            len += 1 + 1;
-        }
-
-        if let Some(_) = &self.subscription_identifiers_available {
-            len += 1 + 1;
-        }
-
-        if let Some(_) = &self.shared_subscription_available {
-            len += 1 + 1;
-        }
-
-        if let Some(_) = &self.server_keep_alive {
-            len += 1 + 2;
-        }
-
-        if let Some(info) = &self.response_information {
-            len += 1 + 2 + info.len();
-        }
-
-        if let Some(reference) = &self.server_reference {
-            len += 1 + 2 + reference.len();
-        }
-
-        if let Some(authentication_method) = &self.authentication_method {
-            len += 1 + 2 + authentication_method.len();
-        }
-
-        if let Some(authentication_data) = &self.authentication_data {
-            len += 1 + 2 + authentication_data.len();
-        }
-
-        len
+        self.session_expiry_interval.l()
+            + self.receive_max.l()
+            + self.max_qos.l()
+            + self.retain_available.l()
+            + self.max_packet_size.l()
+            + self.assigned_client_identifier.l()
+            + self.topic_alias_max.l()
+            + self.reason_string.l()
+            + self.user_properties.l()
+            + self.wildcard_subscription_available.l()
+            + self.subscription_identifiers_available.l()
+            + self.shared_subscription_available.l()
+            + self.server_keep_alive.l()
+            + self.response_information.l()
+            + self.server_reference.l()
+            + self.authentication_method.l()
+            + self.authentication_data.l()
     }
 
-    pub fn extract(mut bytes: &mut Bytes) -> Result<Option<ConnAckProperties>, Error> {
-        let mut session_expiry_interval = None;
-        let mut receive_max = None;
-        let mut max_qos = None;
-        let mut retain_available = None;
-        let mut max_packet_size = None;
-        let mut assigned_client_identifier = None;
-        let mut topic_alias_max = None;
-        let mut reason_string = None;
-        let mut user_properties = Vec::new();
-        let mut wildcard_subscription_available = None;
-        let mut subscription_identifiers_available = None;
-        let mut shared_subscription_available = None;
-        let mut server_keep_alive = None;
-        let mut response_information = None;
-        let mut server_reference = None;
-        let mut authentication_method = None;
-        let mut authentication_data = None;
+    pub fn extract(bytes: &mut Bytes) -> Result<ConnAckProperties, Error> {
+        let mut properties = Self::default();
 
         let (properties_len_len, properties_len) = length(bytes.iter())?;
         bytes.advance(properties_len_len);
-        if properties_len == 0 {
-            return Ok(None);
-        }
+        let bytes = &mut bytes.split_to(properties_len);
 
-        let mut cursor = 0;
-        // read until cursor reaches property length. properties_len = 0 will skip this loop
-        while cursor < properties_len {
-            let prop = read_u8(&mut bytes)?;
-            cursor += 1;
-
-            match property(prop)? {
+        while bytes.has_remaining() {
+            match property(read_u8(bytes)?)? {
                 PropertyType::SessionExpiryInterval => {
-                    session_expiry_interval = Some(read_u32(&mut bytes)?);
-                    cursor += 4;
+                    properties.session_expiry_interval = Some(read_u32(bytes)?)
                 }
-                PropertyType::ReceiveMaximum => {
-                    receive_max = Some(read_u16(&mut bytes)?);
-                    cursor += 2;
-                }
-                PropertyType::MaximumQos => {
-                    max_qos = Some(read_u8(&mut bytes)?);
-                    cursor += 1;
-                }
+                PropertyType::ReceiveMaximum => properties.receive_max = Some(read_u16(bytes)?),
+                PropertyType::MaximumQos => properties.max_qos = Some(read_u8(bytes)?),
                 PropertyType::RetainAvailable => {
-                    retain_available = Some(read_u8(&mut bytes)?);
-                    cursor += 1;
+                    properties.retain_available = Some(read_u8(bytes)?)
                 }
                 PropertyType::AssignedClientIdentifier => {
-                    let id = read_mqtt_string(&mut bytes)?;
-                    cursor += 2 + id.len();
-                    assigned_client_identifier = Some(id);
+                    properties.assigned_client_identifier = Some(read_mqtt_string(bytes)?)
                 }
                 PropertyType::MaximumPacketSize => {
-                    max_packet_size = Some(read_u32(&mut bytes)?);
-                    cursor += 4;
+                    properties.max_packet_size = Some(read_u32(bytes)?)
                 }
                 PropertyType::TopicAliasMaximum => {
-                    topic_alias_max = Some(read_u16(&mut bytes)?);
-                    cursor += 2;
+                    properties.topic_alias_max = Some(read_u16(bytes)?)
                 }
                 PropertyType::ReasonString => {
-                    let reason = read_mqtt_string(&mut bytes)?;
-                    cursor += 2 + reason.len();
-                    reason_string = Some(reason);
+                    properties.reason_string = Some(read_mqtt_string(bytes)?)
                 }
-                PropertyType::UserProperty => {
-                    let key = read_mqtt_string(&mut bytes)?;
-                    let value = read_mqtt_string(&mut bytes)?;
-                    cursor += 2 + key.len() + 2 + value.len();
-                    user_properties.push((key, value));
-                }
+                PropertyType::UserProperty => properties
+                    .user_properties
+                    .push((read_mqtt_string(bytes)?, read_mqtt_string(bytes)?)),
                 PropertyType::WildcardSubscriptionAvailable => {
-                    wildcard_subscription_available = Some(read_u8(&mut bytes)?);
-                    cursor += 1;
+                    properties.wildcard_subscription_available = Some(read_u8(bytes)?)
                 }
                 PropertyType::SubscriptionIdentifierAvailable => {
-                    subscription_identifiers_available = Some(read_u8(&mut bytes)?);
-                    cursor += 1;
+                    properties.subscription_identifiers_available = Some(read_u8(bytes)?)
                 }
                 PropertyType::SharedSubscriptionAvailable => {
-                    shared_subscription_available = Some(read_u8(&mut bytes)?);
-                    cursor += 1;
+                    properties.shared_subscription_available = Some(read_u8(bytes)?)
                 }
                 PropertyType::ServerKeepAlive => {
-                    server_keep_alive = Some(read_u16(&mut bytes)?);
-                    cursor += 2;
+                    properties.server_keep_alive = Some(read_u16(bytes)?)
                 }
                 PropertyType::ResponseInformation => {
-                    let info = read_mqtt_string(&mut bytes)?;
-                    cursor += 2 + info.len();
-                    response_information = Some(info);
+                    properties.response_information = Some(read_mqtt_string(bytes)?)
                 }
                 PropertyType::ServerReference => {
-                    let reference = read_mqtt_string(&mut bytes)?;
-                    cursor += 2 + reference.len();
-                    server_reference = Some(reference);
+                    properties.server_reference = Some(read_mqtt_string(bytes)?)
                 }
                 PropertyType::AuthenticationMethod => {
-                    let method = read_mqtt_string(&mut bytes)?;
-                    cursor += 2 + method.len();
-                    authentication_method = Some(method);
+                    properties.authentication_method = Some(read_mqtt_string(bytes)?)
                 }
                 PropertyType::AuthenticationData => {
-                    let data = read_mqtt_bytes(&mut bytes)?;
-                    cursor += 2 + data.len();
-                    authentication_data = Some(data);
+                    properties.authentication_data = Some(read_mqtt_bytes(bytes)?)
                 }
-                _ => return Err(Error::InvalidPropertyType(prop)),
+                _ => return Err(Error::InvalidPropertyType(read_u8(bytes)?)),
             }
         }
 
-        Ok(Some(ConnAckProperties {
-            session_expiry_interval,
-            receive_max,
-            max_qos,
-            retain_available,
-            max_packet_size,
-            assigned_client_identifier,
-            topic_alias_max,
-            reason_string,
-            user_properties,
-            wildcard_subscription_available,
-            subscription_identifiers_available,
-            shared_subscription_available,
-            server_keep_alive,
-            response_information,
-            server_reference,
-            authentication_method,
-            authentication_data,
-        }))
+        Ok(properties)
     }
 
     fn write(&self, buffer: &mut BytesMut) -> Result<(), Error> {
         let len = self.len();
         write_remaining_length(buffer, len)?;
 
-        if let Some(session_expiry_interval) = self.session_expiry_interval {
-            buffer.put_u8(PropertyType::SessionExpiryInterval as u8);
-            buffer.put_u32(session_expiry_interval);
-        }
-
-        if let Some(receive_maximum) = self.receive_max {
-            buffer.put_u8(PropertyType::ReceiveMaximum as u8);
-            buffer.put_u16(receive_maximum);
-        }
-
-        if let Some(qos) = self.max_qos {
-            buffer.put_u8(PropertyType::MaximumQos as u8);
-            buffer.put_u8(qos);
-        }
-
-        if let Some(retain_available) = self.retain_available {
-            buffer.put_u8(PropertyType::RetainAvailable as u8);
-            buffer.put_u8(retain_available);
-        }
-
-        if let Some(max_packet_size) = self.max_packet_size {
-            buffer.put_u8(PropertyType::MaximumPacketSize as u8);
-            buffer.put_u32(max_packet_size);
-        }
-
-        if let Some(id) = &self.assigned_client_identifier {
-            buffer.put_u8(PropertyType::AssignedClientIdentifier as u8);
-            write_mqtt_string(buffer, id);
-        }
-
-        if let Some(topic_alias_max) = self.topic_alias_max {
-            buffer.put_u8(PropertyType::TopicAliasMaximum as u8);
-            buffer.put_u16(topic_alias_max);
-        }
-
-        if let Some(reason) = &self.reason_string {
-            buffer.put_u8(PropertyType::ReasonString as u8);
-            write_mqtt_string(buffer, reason);
-        }
-
-        for (key, value) in self.user_properties.iter() {
-            buffer.put_u8(PropertyType::UserProperty as u8);
-            write_mqtt_string(buffer, key);
-            write_mqtt_string(buffer, value);
-        }
-
-        if let Some(w) = self.wildcard_subscription_available {
-            buffer.put_u8(PropertyType::WildcardSubscriptionAvailable as u8);
-            buffer.put_u8(w);
-        }
-
-        if let Some(s) = self.subscription_identifiers_available {
-            buffer.put_u8(PropertyType::SubscriptionIdentifierAvailable as u8);
-            buffer.put_u8(s);
-        }
-
-        if let Some(s) = self.shared_subscription_available {
-            buffer.put_u8(PropertyType::SharedSubscriptionAvailable as u8);
-            buffer.put_u8(s);
-        }
-
-        if let Some(keep_alive) = self.server_keep_alive {
-            buffer.put_u8(PropertyType::ServerKeepAlive as u8);
-            buffer.put_u16(keep_alive);
-        }
-
-        if let Some(info) = &self.response_information {
-            buffer.put_u8(PropertyType::ResponseInformation as u8);
-            write_mqtt_string(buffer, info);
-        }
-
-        if let Some(reference) = &self.server_reference {
-            buffer.put_u8(PropertyType::ServerReference as u8);
-            write_mqtt_string(buffer, reference);
-        }
-
-        if let Some(authentication_method) = &self.authentication_method {
-            buffer.put_u8(PropertyType::AuthenticationMethod as u8);
-            write_mqtt_string(buffer, authentication_method);
-        }
-
-        if let Some(authentication_data) = &self.authentication_data {
-            buffer.put_u8(PropertyType::AuthenticationData as u8);
-            write_mqtt_bytes(buffer, authentication_data);
-        }
-
+        self.session_expiry_interval
+            .write(buffer, PropertyType::SessionExpiryInterval);
+        self.receive_max.write(buffer, PropertyType::ReceiveMaximum);
+        self.max_qos.write(buffer, PropertyType::MaximumQos);
+        self.retain_available
+            .write(buffer, PropertyType::RetainAvailable);
+        self.max_packet_size
+            .write(buffer, PropertyType::MaximumPacketSize);
+        self.assigned_client_identifier
+            .write(buffer, PropertyType::AssignedClientIdentifier);
+        self.topic_alias_max
+            .write(buffer, PropertyType::TopicAliasMaximum);
+        self.reason_string.write(buffer, PropertyType::ReasonString);
+        self.user_properties
+            .write(buffer, PropertyType::UserProperty);
+        self.wildcard_subscription_available
+            .write(buffer, PropertyType::WildcardSubscriptionAvailable);
+        self.subscription_identifiers_available
+            .write(buffer, PropertyType::SubscriptionIdentifierAvailable);
+        self.shared_subscription_available
+            .write(buffer, PropertyType::SharedSubscriptionAvailable);
+        self.server_keep_alive
+            .write(buffer, PropertyType::ServerKeepAlive);
+        self.response_information
+            .write(buffer, PropertyType::ResponseInformation);
+        self.server_reference
+            .write(buffer, PropertyType::ServerReference);
+        self.authentication_method
+            .write(buffer, PropertyType::AuthenticationMethod);
+        self.authentication_data
+            .write(buffer, PropertyType::AuthenticationData);
         Ok(())
     }
 }
@@ -502,7 +405,7 @@ mod test {
         ConnAck {
             session_present: false,
             code: ConnectReturnCode::Success,
-            properties: Some(properties),
+            properties,
         }
     }
 

@@ -79,6 +79,12 @@ enum PropertyType {
     SharedSubscriptionAvailable = 42,
 }
 
+impl PropertyType {
+    pub fn write(self, bytes: &mut impl BufMut) {
+        bytes.put_u8(self as u8)
+    }
+}
+
 fn property(num: u8) -> Result<PropertyType, Error> {
     let property = match num {
         1 => PropertyType::PayloadFormatIndicator,
