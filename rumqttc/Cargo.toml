@@ -29,6 +29,7 @@ async-channel = "1.5"
 log = "0.4"
 thiserror = "1.0.21"
 http = "^0.2"
+fixedbitset = "0.3"
 
 [dev-dependencies]
 pretty_env_logger = "0.4"

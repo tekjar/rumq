@@ -108,6 +108,7 @@ mod eventloop;
 mod framed;
 mod state;
 mod tls;
+mod ds;
 
 pub use async_channel::{SendError, Sender, TrySendError};
 pub use client::{AsyncClient, Client, ClientError, Connection};

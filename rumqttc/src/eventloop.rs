@@ -148,7 +148,7 @@ impl EventLoop {
     async fn select(&mut self) -> Result<Event, ConnectionError> {
         let network = self.network.as_mut().unwrap();
         // let await_acks = self.state.await_acks;
-        let inflight_full = self.state.inflight >= self.options.inflight;
+        let inflight_full = self.state.inflight() >= self.options.inflight as usize;
         let throttle = self.options.pending_throttle;
         let pending = self.pending.len() > 0;
         let collision = self.state.collision.is_some();
