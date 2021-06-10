@@ -151,7 +151,7 @@ impl State {
     }
 
     pub fn add_pending(&mut self, topic: String, qos: QoS, data: Vec<Bytes>) {
-        self.pending = Pending::new(topic.clone(), qos, data.into_iter());
+        self.pending = Pending::new(topic, qos, data.into_iter());
     }
 
     /// Adds next packet identifier to QoS 1 and 2 publish packets.

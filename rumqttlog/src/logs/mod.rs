@@ -16,7 +16,7 @@ pub struct DataLog {
 
 impl DataLog {
     pub fn new(config: Arc<Config>) -> DataLog {
-        let commitlog = data::DataLog::new(config.clone());
+        let commitlog = data::DataLog::new(config);
         DataLog { commitlog }
     }
 
