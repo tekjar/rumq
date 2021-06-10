@@ -91,12 +91,7 @@ impl DataRequest {
     }
 
     /// New data request with provided offsets
-    pub fn offsets(
-        topic: String,
-        qos: u8,
-        cursor: (u64, u64),
-        last_retain: u64,
-    ) -> DataRequest {
+    pub fn offsets(topic: String, qos: u8, cursor: (u64, u64), last_retain: u64) -> DataRequest {
         DataRequest {
             topic,
             qos,

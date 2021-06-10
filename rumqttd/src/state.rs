@@ -33,7 +33,7 @@ struct Pending {
     topic: String,
     qos: QoS,
     payload: IntoIter<Bytes>,
-    collision: Option<Publish>
+    collision: Option<Publish>,
 }
 
 impl Pending {
@@ -42,7 +42,7 @@ impl Pending {
             topic: "".to_string(),
             qos: QoS::AtMostOnce,
             payload: vec![].into_iter(),
-            collision: None
+            collision: None,
         }
     }
 
@@ -51,7 +51,7 @@ impl Pending {
             topic,
             qos,
             payload,
-            collision: None
+            collision: None,
         }
     }
 
@@ -181,7 +181,10 @@ impl State {
             // that client hasn't sent ack packet yet.
             match self.outgoing_pub.get(pkid).unwrap() {
                 Some(_) => {
-                    info!("Collision on packet id = {:?}. Inflight = {}", publish.pkid, self.inflight);
+                    info!(
+                        "Collision on packet id = {:?}. Inflight = {}",
+                        publish.pkid, self.inflight
+                    );
                     self.pending.collision = Some(publish);
                     return Ok(());
                 }
@@ -344,14 +347,17 @@ impl State {
         Ok(())
     }
 
-    fn check_and_resolve_collision(&mut self, pkid: u16) -> Result<(), Error>  {
+    fn check_and_resolve_collision(&mut self, pkid: u16) -> Result<(), Error> {
         if let Some(publish) = &self.pending.collision {
             if publish.pkid == pkid {
                 let publish = self.pending.collision.take().unwrap();
                 publish.write(&mut self.write)?;
                 self.outgoing_pub[pkid as usize] = Some(publish);
                 self.inflight += 1;
-                info!("Resolving collision on packet id = {:?}. Inflight = {}", pkid, self.inflight);
+                info!(
+                    "Resolving collision on packet id = {:?}. Inflight = {}",
+                    pkid, self.inflight
+                );
             }
         }
 

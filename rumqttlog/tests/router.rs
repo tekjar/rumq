@@ -1,6 +1,6 @@
-use rumqttlog::*;
-use mqttbytes::*;
 use mqttbytes::v4::*;
+use mqttbytes::*;
+use rumqttlog::*;
 use std::sync::Arc;
 use std::thread;
 use std::time::Duration;

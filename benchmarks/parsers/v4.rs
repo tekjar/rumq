@@ -51,7 +51,7 @@ fn main() {
         payload_size,
         total_size_gb,
         write_throughput_gpbs: write_throughput,
-        read_throughput_gpbs: read_throughput
+        read_throughput_gpbs: read_throughput,
     };
 
     println!("{}", serde_json::to_string_pretty(&print).unwrap());

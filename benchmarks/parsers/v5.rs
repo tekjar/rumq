@@ -27,7 +27,7 @@ fn main() {
 
     let elapsed_micros = start.elapsed().as_micros();
     let total_size = output.len();
-    let throughput = (total_size * 1000_000) / elapsed_micros as usize;
+    let throughput = (total_size * 1_000_000) / elapsed_micros as usize;
     let write_throughput = throughput as f32 / 1024.0 / 1024.0 / 1024.0;
     let total_size_gb = total_size as f32 / 1024.0 / 1024.0 / 1024.0;
 
@@ -44,7 +44,6 @@ fn main() {
     let throughput = (total_size * 1_000_000) / elapsed_micros as usize;
     let read_throughput = throughput as f32 / 1024.0 / 1024.0 / 1024.0;
 
-
     // --------------------------- results ---------------------------------------
 
     let print = common::Print {
@@ -53,7 +52,7 @@ fn main() {
         payload_size,
         total_size_gb,
         write_throughput_gpbs: write_throughput,
-        read_throughput_gpbs: read_throughput
+        read_throughput_gpbs: read_throughput,
     };
 
     println!("{}", serde_json::to_string_pretty(&print).unwrap());

@@ -39,10 +39,7 @@ impl ConsoleLink {
 
 pub async fn start(console: Arc<ConsoleLink>) {
     let config_console = console.clone();
-    let address = config_console
-        .config
-        .console
-        .listen;
+    let address = config_console.config.console.listen;
 
     let config = warp::path!("node" / "config").map(move || {
         let config = config_console.config.clone();
