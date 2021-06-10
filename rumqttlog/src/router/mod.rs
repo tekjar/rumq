@@ -125,8 +125,8 @@ impl Message {
     pub fn new(topic: String, qos: u8, payload: Bytes) -> Message {
         Message {
             topic,
-            payload,
             qos,
+            payload,
         }
     }
 }
@@ -168,11 +168,11 @@ impl Data {
     ) -> Data {
         Data {
             topic,
+            qos,
             cursor,
             last_retain,
             size,
             payload,
-            qos,
         }
     }
 }
@@ -201,8 +201,8 @@ pub struct TopicsRequest {
 impl TopicsRequest {
     pub fn new() -> TopicsRequest {
         TopicsRequest {
-            offset: 0,
             count: 10,
+            offset: 0,
         }
     }
 

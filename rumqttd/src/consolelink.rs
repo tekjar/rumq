@@ -30,9 +30,9 @@ impl ConsoleLink {
 
         ConsoleLink {
             config,
+            id,
             router_tx,
             link_rx,
-            id,
         }
     }
 }

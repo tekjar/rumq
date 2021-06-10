@@ -112,11 +112,11 @@ impl Connect {
         let connect = Connect {
             protocol,
             keep_alive,
-            properties,
             client_id,
             clean_session,
             last_will,
             login,
+            properties,
         };
 
         Ok(connect)
