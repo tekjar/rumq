@@ -351,7 +351,7 @@ async fn mqtt_connect(
             }
         };
 
-        Ok::<_, io::Error>(packet)
+        io::Result::Ok(packet)
     })
     .await??;
 

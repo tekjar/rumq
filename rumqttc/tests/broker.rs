@@ -1,5 +1,5 @@
-use mqttbytes::*;
 use mqttbytes::v4::*;
+use mqttbytes::*;
 use std::collections::VecDeque;
 use std::io;
 use std::time::Duration;
@@ -214,7 +214,7 @@ impl Network {
         }
     }
 
-    pub async fn connack(&mut self, connack: ConnAck) -> Result<usize, io::Error> {
+    pub async fn connack(&mut self, connack: ConnAck) -> io::Result<usize> {
         let mut write = BytesMut::new();
         let len = match connack.write(&mut write) {
             Ok(size) => size,
@@ -227,7 +227,7 @@ impl Network {
 
     /// Read packets in bulk. This allow replies to be in bulk. This method is used
     /// after the connection is established to read a bunch of incoming packets
-    pub async fn readb(&mut self, incoming: &mut VecDeque<Incoming>) -> Result<(), io::Error> {
+    pub async fn readb(&mut self, incoming: &mut VecDeque<Incoming>) -> io::Result<()> {
         let mut count = 0;
         loop {
             match read(&mut self.read, self.max_incoming_size) {
