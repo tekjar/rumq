@@ -22,11 +22,9 @@ impl Subscribe {
             retain_forward_rule: RetainForwardRule::OnEverySubscribe,
         };
 
-        let mut filters = Vec::new();
-        filters.push(filter);
         Subscribe {
             pkid: 0,
-            filters,
+            filters: vec![filter],
             properties: None,
         }
     }

@@ -12,9 +12,10 @@ pub struct Unsubscribe {
 
 impl Unsubscribe {
     pub fn new<S: Into<String>>(topic: S) -> Unsubscribe {
-        let mut topics = Vec::new();
-        topics.push(topic.into());
-        Unsubscribe { pkid: 0, topics }
+        Unsubscribe {
+            pkid: 0,
+            topics: vec![topic.into()],
+        }
     }
 
     pub fn read(fixed_header: FixedHeader, mut bytes: Bytes) -> Result<Self, Error> {

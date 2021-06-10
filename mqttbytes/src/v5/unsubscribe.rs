@@ -13,11 +13,9 @@ pub struct Unsubscribe {
 
 impl Unsubscribe {
     pub fn new<S: Into<String>>(topic: S) -> Unsubscribe {
-        let mut filters = Vec::new();
-        filters.push(topic.into());
         Unsubscribe {
             pkid: 0,
-            filters,
+            filters: vec![topic.into()],
             properties: None,
         }
     }

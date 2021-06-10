@@ -18,9 +18,10 @@ impl Subscribe {
             qos,
         };
 
-        let mut filters = Vec::new();
-        filters.push(filter);
-        Subscribe { pkid: 0, filters }
+        Subscribe {
+            pkid: 0,
+            filters: vec![filter],
+        }
     }
 
     pub fn new_many<T>(topics: T) -> Subscribe
