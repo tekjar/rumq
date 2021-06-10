@@ -35,8 +35,8 @@ pub fn start(id: &str, payload_size: usize, count: usize) -> Result<(), Box<dyn 
 
     let mut acks_count = 0;
     let start = Instant::now();
-    for event in connection.iter() {
-        if let Ok(Event::Incoming(Incoming::PubAck(_))) = event {
+    for event in connection.iter().flatten() {
+        if let Event::Incoming(Incoming::PubAck(_)) = event {
             acks_count += 1;
             if acks_count == count {
                 break;

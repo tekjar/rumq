@@ -122,13 +122,12 @@ impl Tracker {
         }
 
         for filter in filters {
+            let subscription = filter.path.clone();
+            let qos = filter.qos as u8;
+
             if has_wildcards(&filter.path) {
-                let subscription = filter.path.clone();
-                let qos = filter.qos as u8;
                 self.wild_subscriptions.push((subscription, qos));
             } else {
-                let subscription = filter.path.clone();
-                let qos = filter.qos as u8;
                 self.concrete_subscriptions.insert(subscription, qos);
             }
 
@@ -209,10 +208,10 @@ impl Tracker {
             self.topics_index.remove(&topic);
 
             // Find the topic in request queue
-            let position = self.requests.iter().position(|request| match request {
-                Request::Data(data) if data.topic == topic => true,
-                _ => false,
-            });
+            let position = self
+                .requests
+                .iter()
+                .position(|request| matches!(request, Request::Data(data) if data.topic == topic));
 
             match position {
                 Some(i) => {

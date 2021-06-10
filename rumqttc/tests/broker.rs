@@ -64,7 +64,7 @@ impl Broker {
     // Reads a publish packet from the stream with 2 second timeout
     pub async fn read_publish(&mut self) -> Option<Publish> {
         loop {
-            let packet = if self.incoming.len() > 0 {
+            let packet = if !self.incoming.is_empty() {
                 self.incoming.pop_front().unwrap()
             } else {
                 let packet = time::timeout(Duration::from_secs(2), async {

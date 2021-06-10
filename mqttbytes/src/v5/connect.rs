@@ -747,7 +747,7 @@ mod test {
             0x10, // packet type
             0x9d, // remaining len
             0x01, // remaining len
-            00, 04,   // 4
+            0x00, 0x04, // 4
             0x4d, // M
             0x51, // Q
             0x54, // T

@@ -268,7 +268,7 @@ impl State {
 
             // If publish packet is already recorded before, this is a duplicate
             // qos 2 publish which should be filtered here.
-            if let Some(_) = mem::replace(&mut self.incoming_pub[pkid as usize], Some(pkid)) {
+            if mem::replace(&mut self.incoming_pub[pkid as usize], Some(pkid)).is_some() {
                 PubRec::new(pkid).write(&mut self.write)?;
                 return Ok(false);
             }
