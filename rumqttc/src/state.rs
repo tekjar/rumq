@@ -1,4 +1,4 @@
-use crate::{Event, Incoming, Outgoing, Request};
+use crate::{Event, Incoming, Outgoing, Request, OneshotSender};
 
 use bytes::BytesMut;
 use mqttbytes::v4::*;
@@ -140,6 +140,7 @@ impl MqttState {
     pub fn handle_outgoing_packet(&mut self, request: Request) -> Result<(), StateError> {
         match request {
             Request::Publish(publish) => self.outgoing_publish(publish)?,
+            Request::PublishWithNotify {publish, notify} => self.outgoing_publish_with_notify(publish, notify)?,
             Request::PubRel(pubrel) => self.outgoing_pubrel(pubrel)?,
             Request::Subscribe(subscribe) => self.outgoing_subscribe(subscribe)?,
             Request::Unsubscribe(unsubscribe) => self.outgoing_unsubscribe(unsubscribe)?,
@@ -333,6 +334,17 @@ impl MqttState {
         publish.write(&mut self.write)?;
         let event = Event::Outgoing(Outgoing::Publish(publish.pkid));
         self.events.push_back(event);
+        Ok(())
+    }
+
+    fn outgoing_publish_with_notify(&mut self, publish: Publish, notify: OneshotSender<u16>) -> Result<(), StateError> {
+        let () = self.outgoing_publish(publish)?;
+        if let Some(Event::Outgoing(Outgoing::Publish(pkid))) = self.events.back() {
+            // Notify the sender about the choosen pkid.
+            let _ = notify.send(*pkid); // Ignore failure
+        } else {
+            error!("outgoing_publish should emit Outgoing::Publish event");
+        }
         Ok(())
     }
 

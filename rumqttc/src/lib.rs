@@ -117,6 +117,7 @@ pub use mqttbytes::*;
 pub use state::{MqttState, StateError};
 pub use tokio_rustls::rustls::internal::pemfile::{certs, pkcs8_private_keys, rsa_private_keys};
 pub use tokio_rustls::rustls::ClientConfig;
+pub use tokio::sync::oneshot::Sender as OneshotSender;
 
 pub type Incoming = Packet;
 
@@ -149,9 +150,14 @@ pub enum Outgoing {
 
 /// Requests by the client to mqtt event loop. Request are
 /// handled one by one.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Debug)]
 pub enum Request {
     Publish(Publish),
+    PublishWithNotify {
+        publish: Publish,
+        /// notifies the caller about the selected `pkid`
+        notify: OneshotSender<u16>,
+    },
     PubAck(PubAck),
     PubRec(PubRec),
     PubComp(PubComp),
