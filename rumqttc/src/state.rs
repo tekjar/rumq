@@ -1,4 +1,4 @@
-use crate::{Event, Incoming, Outgoing, Request};
+use crate::{CorrelationId, Event, Incoming, Outgoing, Request};
 
 use bytes::BytesMut;
 use mqttbytes::v4::*;
@@ -140,6 +140,9 @@ impl MqttState {
     pub fn handle_outgoing_packet(&mut self, request: Request) -> Result<(), StateError> {
         match request {
             Request::Publish(publish) => self.outgoing_publish(publish)?,
+            Request::PublishCorrelated(publish, correlation_id) => {
+                self.outgoing_publish_correlated(publish, correlation_id)?
+            }
             Request::PubRel(pubrel) => self.outgoing_pubrel(pubrel)?,
             Request::Subscribe(subscribe) => self.outgoing_subscribe(subscribe)?,
             Request::Unsubscribe(unsubscribe) => self.outgoing_unsubscribe(unsubscribe)?,
@@ -295,9 +298,25 @@ impl MqttState {
         Ok(())
     }
 
+    fn outgoing_publish(&mut self, publish: Publish) -> Result<(), StateError> {
+        self.outgoing_publish_maybe_correlated(publish, None)
+    }
+
+    fn outgoing_publish_correlated(
+        &mut self,
+        publish: Publish,
+        correlation_id: CorrelationId,
+    ) -> Result<(), StateError> {
+        self.outgoing_publish_maybe_correlated(publish, Some(correlation_id))
+    }
+
     /// Adds next packet identifier to QoS 1 and 2 publish packets and returns
     /// it buy wrapping publish in packet
-    fn outgoing_publish(&mut self, mut publish: Publish) -> Result<(), StateError> {
+    fn outgoing_publish_maybe_correlated(
+        &mut self,
+        mut publish: Publish,
+        maybe_correlation_id: Option<CorrelationId>,
+    ) -> Result<(), StateError> {
         if publish.qos != QoS::AtMostOnce {
             if publish.pkid == 0 {
                 publish.pkid = self.next_pkid();
@@ -331,8 +350,12 @@ impl MqttState {
         );
 
         publish.write(&mut self.write)?;
-        let event = Event::Outgoing(Outgoing::Publish(publish.pkid));
-        self.events.push_back(event);
+        let outgoing_event = match maybe_correlation_id {
+            Some(correlation_id) => Outgoing::PublishCorrelated(publish.pkid, correlation_id),
+
+            None => Outgoing::Publish(publish.pkid),
+        };
+        self.events.push_back(Event::Outgoing(outgoing_event));
         Ok(())
     }
 
@@ -468,7 +491,7 @@ impl MqttState {
 #[cfg(test)]
 mod test {
     use super::{MqttState, StateError};
-    use crate::{Incoming, MqttOptions, Request};
+    use crate::{Event, Incoming, MqttOptions, Outgoing, Request};
     use mqttbytes::v4::*;
     use mqttbytes::*;
 
@@ -581,6 +604,33 @@ mod test {
             Packet::PubRec(pubrec) => assert_eq!(pubrec.pkid, 1),
             _ => panic!("Invalid network request: {:?}", packet),
         }
+    }
+
+    #[test]
+    fn outgoing_publish_correlated_requests_should_emit_outgoing_publish_correlated_events() {
+        let mut mqtt = build_mqttstate();
+
+        // QoS0, 1, 2 Publishes
+        let publish1 = build_outgoing_publish(QoS::AtMostOnce);
+        let publish2 = build_outgoing_publish(QoS::AtLeastOnce);
+        let publish3 = build_outgoing_publish(QoS::ExactlyOnce);
+
+        mqtt.handle_outgoing_packet(Request::PublishCorrelated(publish1, 42))
+            .unwrap();
+        mqtt.handle_outgoing_packet(Request::Publish(publish2))
+            .unwrap();
+        mqtt.handle_outgoing_packet(Request::PublishCorrelated(publish3, 43))
+            .unwrap();
+
+        assert_eq!(
+            mqtt.events[0],
+            Event::Outgoing(Outgoing::PublishCorrelated(0u16, 42))
+        );
+        assert_eq!(mqtt.events[1], Event::Outgoing(Outgoing::Publish(1u16)));
+        assert_eq!(
+            mqtt.events[2],
+            Event::Outgoing(Outgoing::PublishCorrelated(2u16, 43))
+        );
     }
 
     #[test]

@@ -119,12 +119,15 @@ pub use tokio_rustls::rustls::internal::pemfile::{certs, pkcs8_private_keys, rsa
 pub use tokio_rustls::rustls::ClientConfig;
 
 pub type Incoming = Packet;
+pub type CorrelationId = usize;
 
 /// Current outgoing activity on the eventloop
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub enum Outgoing {
     /// Publish packet with packet identifier. 0 implies QoS 0
     Publish(u16),
+    /// Same as `Publish`, but includes a correlation id. Triggered by `Request::PublishCorrelated`.
+    PublishCorrelated(u16, CorrelationId),
     /// Subscribe packet with packet identifier
     Subscribe(u16),
     /// Unsubscribe packet with packet identifier
@@ -152,6 +155,10 @@ pub enum Outgoing {
 #[derive(Clone, Debug, PartialEq)]
 pub enum Request {
     Publish(Publish),
+    /// `PublishCorrelated` allows to correlate a `Publish` request with an id choosen by the
+    /// client. This serves the purpose to correlate a published message with the `pkgid`
+    /// that it got assigned.
+    PublishCorrelated(Publish, CorrelationId),
     PubAck(PubAck),
     PubRec(PubRec),
     PubComp(PubComp),
