@@ -21,8 +21,8 @@ tokio = { version = "1.0", features = ["net", "time"] }
 bytes = "1.0"
 webpki = "0.21"
 tokio-rustls = "0.22"
-async-tungstenite = { version = "0.11.0", default-features = false, features = ["tokio-rustls"], optional = true }
-ws_stream_tungstenite = { version = "0.4.0", default-features = false, features = ["tokio_io"], optional = true }
+async-tungstenite = { version = "0.13.1", default-features = false, features = ["tokio-rustls"], optional = true }
+ws_stream_tungstenite = { version = "0.6.1", default-features = false, features = ["tokio_io"], optional = true }
 mqttbytes = { path = "../mqttbytes", version = "0.4" }
 pollster = "0.2"
 async-channel = "1.5"
