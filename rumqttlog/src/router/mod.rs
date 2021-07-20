@@ -91,12 +91,7 @@ impl DataRequest {
     }
 
     /// New data request with provided offsets
-    pub fn offsets(
-        topic: String,
-        qos: u8,
-        cursor: (u64, u64),
-        last_retain: u64,
-    ) -> DataRequest {
+    pub fn offsets(topic: String, qos: u8, cursor: (u64, u64), last_retain: u64) -> DataRequest {
         DataRequest {
             topic,
             qos,
@@ -130,8 +125,8 @@ impl Message {
     pub fn new(topic: String, qos: u8, payload: Bytes) -> Message {
         Message {
             topic,
-            payload,
             qos,
+            payload,
         }
     }
 }
@@ -173,11 +168,11 @@ impl Data {
     ) -> Data {
         Data {
             topic,
+            qos,
             cursor,
             last_retain,
             size,
             payload,
-            qos,
         }
     }
 }
@@ -206,8 +201,8 @@ pub struct TopicsRequest {
 impl TopicsRequest {
     pub fn new() -> TopicsRequest {
         TopicsRequest {
-            offset: 0,
             count: 10,
+            offset: 0,
         }
     }
 

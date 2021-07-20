@@ -149,7 +149,7 @@ impl RemoteLink {
 
     pub async fn start(&mut self) -> Result<(), Error> {
         self.network.set_keepalive(self.connect.keep_alive);
-        let pending = mem::replace(&mut self.pending, Vec::new());
+        let pending = mem::take(&mut self.pending);
         let mut pending = pending.into_iter();
 
         loop {

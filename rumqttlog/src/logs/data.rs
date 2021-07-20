@@ -3,8 +3,8 @@ use std::io;
 
 use crate::Config;
 use bytes::Bytes;
-use std::sync::Arc;
 use segments::MemoryLog;
+use std::sync::Arc;
 
 pub(crate) struct DataLog {
     config: Arc<Config>,
@@ -13,7 +13,7 @@ pub(crate) struct DataLog {
 
 struct Data {
     retained: Option<(u64, Bytes)>,
-    log: MemoryLog<Bytes>
+    log: MemoryLog<Bytes>,
 }
 
 impl DataLog {
@@ -36,7 +36,7 @@ impl DataLog {
             let max_segment_count = self.config.max_segment_count;
             let mut data = Data {
                 retained: None,
-                log: MemoryLog::new(max_segment_size, max_segment_count)
+                log: MemoryLog::new(max_segment_size, max_segment_count),
             };
             let offsets = data.log.append(record.len(), record);
             self.logs.insert(topic.to_owned(), data);
@@ -62,7 +62,7 @@ impl DataLog {
             let max_segment_count = self.config.max_segment_count;
             let mut data = Data {
                 retained: None,
-                log: MemoryLog::new(max_segment_size, max_segment_count)
+                log: MemoryLog::new(max_segment_size, max_segment_count),
             };
 
             if record.is_empty() {
@@ -116,7 +116,6 @@ impl DataLog {
                 last_retain = *id;
             }
         }
-
 
         // For debugging. Will be removed later
         // println!(

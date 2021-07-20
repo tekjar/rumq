@@ -23,8 +23,8 @@ pub struct ConnAck {
 impl ConnAck {
     pub fn new(code: ConnectReturnCode, session_present: bool) -> ConnAck {
         ConnAck {
-            code,
             session_present,
+            code,
         }
     }
 

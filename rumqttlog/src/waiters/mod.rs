@@ -26,7 +26,7 @@ impl DataWaiters {
     /// Register data waiter
     pub fn register(&mut self, id: ConnectionId, request: DataRequest) {
         let topic = request.topic.clone();
-        let waiters = self.waiters.entry(topic).or_insert(Waiters::new());
+        let waiters = self.waiters.entry(topic).or_default();
         waiters.register(id, request);
     }
 
@@ -95,5 +95,11 @@ impl<T> Waiters<T> {
             Some(index) => self.current.swap_remove_back(index).map(|v| v.1),
             None => None,
         }
+    }
+}
+
+impl<T> Default for Waiters<T> {
+    fn default() -> Self {
+        Self::new()
     }
 }

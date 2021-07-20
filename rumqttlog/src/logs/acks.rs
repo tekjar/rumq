@@ -38,7 +38,7 @@ impl Acks {
         match qos {
             1 => self.acks.push(Packet::PubAck(PubAck::new(pkid))),
             2 => self.acks.push(Packet::PubRec(PubRec::new(pkid))),
-            _ => return,
+            _ => {}
         }
     }
 

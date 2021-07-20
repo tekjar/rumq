@@ -39,7 +39,7 @@ mod prof {
     use pprof::protos::Message;
     pub struct Profile(pprof::ProfilerGuard<'static>);
     pub fn new(enable: bool) -> Option<Profile> {
-        if enable{
+        if enable {
             Some(Profile(pprof::ProfilerGuard::new(100).unwrap()))
         } else {
             None

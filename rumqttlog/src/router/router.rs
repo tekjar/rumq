@@ -387,7 +387,7 @@ impl Router {
 
         let mut return_codes = Vec::new();
         for filter in subscribe.filters.iter() {
-            if filter.path.starts_with("test") || filter.path.starts_with("$") {
+            if filter.path.starts_with("test") || filter.path.starts_with('$') {
                 return_codes.push(SubscribeReasonCode::Failure);
             } else {
                 return_codes.push(SubscribeReasonCode::Success(filter.qos));
@@ -811,8 +811,10 @@ mod test {
     /// when previous notification fails
     #[test]
     fn failed_notification_connection_should_not_be_scheduled() {
-        let mut config = Config::default();
-        config.id = 0;
+        let config = Config {
+            id: 0,
+            ..Config::default()
+        };
 
         let (mut router, _tx) = Router::new(Arc::new(config));
         let _rx = add_new_remote_connection(&mut router, "10");

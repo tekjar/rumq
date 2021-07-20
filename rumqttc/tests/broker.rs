@@ -1,5 +1,5 @@
-use mqttbytes::*;
 use mqttbytes::v4::*;
+use mqttbytes::*;
 use std::collections::VecDeque;
 use std::io;
 use std::time::Duration;
@@ -64,7 +64,7 @@ impl Broker {
     // Reads a publish packet from the stream with 2 second timeout
     pub async fn read_publish(&mut self) -> Option<Publish> {
         loop {
-            let packet = if self.incoming.len() > 0 {
+            let packet = if !self.incoming.is_empty() {
                 self.incoming.pop_front().unwrap()
             } else {
                 let packet = time::timeout(Duration::from_secs(2), async {
@@ -214,7 +214,7 @@ impl Network {
         }
     }
 
-    pub async fn connack(&mut self, connack: ConnAck) -> Result<usize, io::Error> {
+    pub async fn connack(&mut self, connack: ConnAck) -> io::Result<usize> {
         let mut write = BytesMut::new();
         let len = match connack.write(&mut write) {
             Ok(size) => size,
@@ -227,7 +227,7 @@ impl Network {
 
     /// Read packets in bulk. This allow replies to be in bulk. This method is used
     /// after the connection is established to read a bunch of incoming packets
-    pub async fn readb(&mut self, incoming: &mut VecDeque<Incoming>) -> Result<(), io::Error> {
+    pub async fn readb(&mut self, incoming: &mut VecDeque<Incoming>) -> io::Result<()> {
         let mut count = 0;
         loop {
             match read(&mut self.read, self.max_incoming_size) {

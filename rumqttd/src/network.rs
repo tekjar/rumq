@@ -77,7 +77,7 @@ impl Network {
         }
     }
 
-    pub async fn read(&mut self) -> Result<Packet, io::Error> {
+    pub async fn read(&mut self) -> io::Result<Packet> {
         loop {
             let required = match read(&mut self.read, self.max_incoming_size) {
                 Ok(packet) => return Ok(packet),
@@ -158,7 +158,7 @@ impl Network {
         }
     }
 
-    pub async fn _connect(&mut self, connect: Connect) -> Result<usize, io::Error> {
+    pub async fn _connect(&mut self, connect: Connect) -> io::Result<usize> {
         let mut write = BytesMut::new();
         let len = match connect.write(&mut write) {
             Ok(size) => size,
@@ -169,7 +169,7 @@ impl Network {
         Ok(len)
     }
 
-    pub async fn connack(&mut self, connack: ConnAck) -> Result<usize, io::Error> {
+    pub async fn connack(&mut self, connack: ConnAck) -> io::Result<usize> {
         let mut write = BytesMut::new();
         let len = match connack.write(&mut write) {
             Ok(size) => size,
@@ -180,7 +180,7 @@ impl Network {
         Ok(len)
     }
 
-    pub async fn flush(&mut self, write: &mut BytesMut) -> Result<(), io::Error> {
+    pub async fn flush(&mut self, write: &mut BytesMut) -> io::Result<()> {
         if write.is_empty() {
             return Ok(());
         }

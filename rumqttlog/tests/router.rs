@@ -1,6 +1,6 @@
-use rumqttlog::*;
-use mqttbytes::*;
 use mqttbytes::v4::*;
+use mqttbytes::*;
+use rumqttlog::*;
 use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
@@ -162,8 +162,10 @@ pub(crate) struct Connections {
 
 impl Connections {
     pub fn new() -> Connections {
-        let mut config = Config::default();
-        config.id = 0;
+        let config = Config {
+            id: 0,
+            ..Config::default()
+        };
 
         let (router, router_tx) = Router::new(Arc::new(config));
         thread::spawn(move || {

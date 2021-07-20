@@ -26,7 +26,7 @@ fn main() {
 
     let elapsed_micros = start.elapsed().as_micros();
     let total_size = output.written;
-    let throughput = (total_size * 1000_000) / elapsed_micros as usize;
+    let throughput = (total_size * 1_000_000) / elapsed_micros as usize;
     let write_throughput = throughput as f32 / 1024.0 / 1024.0 / 1024.0;
     let total_size_gb = total_size as f32 / 1024.0 / 1024.0 / 1024.0;
 
@@ -42,7 +42,7 @@ fn main() {
     }
 
     let elapsed_micros = start.elapsed().as_micros();
-    let throughput = (total_size * 1000_000) / elapsed_micros as usize;
+    let throughput = (total_size * 1_000_000) / elapsed_micros as usize;
     let read_throughput = throughput as f32 / 1024.0 / 1024.0 / 1024.0;
 
     // --------------------------- results ---------------------------------------
@@ -53,7 +53,7 @@ fn main() {
         payload_size,
         total_size_gb,
         write_throughput_gpbs: write_throughput,
-        read_throughput_gpbs: read_throughput
+        read_throughput_gpbs: read_throughput,
     };
 
     println!("{}", serde_json::to_string_pretty(&print).unwrap());
@@ -423,8 +423,8 @@ pub struct Headers {
 
 impl FromIterator<(String, String)> for Headers {
     fn from_iter<T>(iter: T) -> Self
-        where
-            T: IntoIterator<Item = (String, String)>,
+    where
+        T: IntoIterator<Item = (String, String)>,
     {
         let mut inner = HashMap::default();
         for (k, v) in iter {
@@ -437,8 +437,8 @@ impl FromIterator<(String, String)> for Headers {
 
 impl<'a> FromIterator<(&'a String, &'a String)> for Headers {
     fn from_iter<T>(iter: T) -> Self
-        where
-            T: IntoIterator<Item = (&'a String, &'a String)>,
+    where
+        T: IntoIterator<Item = (&'a String, &'a String)>,
     {
         let mut inner = HashMap::default();
         for (k, v) in iter {
@@ -453,8 +453,8 @@ impl<'a> FromIterator<(&'a String, &'a String)> for Headers {
 
 impl<'a> FromIterator<&'a (&'a String, &'a String)> for Headers {
     fn from_iter<T>(iter: T) -> Self
-        where
-            T: IntoIterator<Item = &'a (&'a String, &'a String)>,
+    where
+        T: IntoIterator<Item = &'a (&'a String, &'a String)>,
     {
         let mut inner = HashMap::default();
         for (k, v) in iter {
@@ -469,8 +469,8 @@ impl<'a> FromIterator<&'a (&'a String, &'a String)> for Headers {
 
 impl<'a> FromIterator<(&'a str, &'a str)> for Headers {
     fn from_iter<T>(iter: T) -> Self
-        where
-            T: IntoIterator<Item = (&'a str, &'a str)>,
+    where
+        T: IntoIterator<Item = (&'a str, &'a str)>,
     {
         let mut inner = HashMap::default();
         for (k, v) in iter {
@@ -485,8 +485,8 @@ impl<'a> FromIterator<(&'a str, &'a str)> for Headers {
 
 impl<'a> FromIterator<&'a (&'a str, &'a str)> for Headers {
     fn from_iter<T>(iter: T) -> Self
-        where
-            T: IntoIterator<Item = &'a (&'a str, &'a str)>,
+    where
+        T: IntoIterator<Item = &'a (&'a str, &'a str)>,
     {
         let mut inner = HashMap::default();
         for (k, v) in iter {
@@ -532,7 +532,7 @@ impl TryFrom<&[u8]> for Headers {
                     let entry = inner.entry(k.to_string()).or_insert_with(HashSet::default);
                     entry.insert(v.to_string());
                 }
-                    [""] => continue,
+                [""] => continue,
                 _ => {
                     return parse_error("malformed header input");
                 }

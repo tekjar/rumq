@@ -297,8 +297,8 @@ impl Server {
     #[cfg(not(feature = "use-native-tls"))]
     fn tls_native_tls(
         &self,
-        _pkcs12_path: &String,
-        _pkcs12_pass: &String,
+        _pkcs12_path: &str,
+        _pkcs12_pass: &str,
     ) -> Result<Option<ServerTLSAcceptor>, Error> {
         Err(Error::NativeTlsNotEnabled)
     }
@@ -306,27 +306,28 @@ impl Server {
     #[cfg(feature = "use-rustls")]
     fn tls_rustls(
         &self,
-        cert_path: &String,
-        key_path: &String,
-        ca_path: &String,
+        cert_path: &str,
+        key_path: &str,
+        ca_path: &str,
     ) -> Result<Option<ServerTLSAcceptor>, Error> {
         let (certs, key) = {
             // Get certificates
             let cert_file = File::open(&cert_path);
-            let cert_file = cert_file.map_err(|_| Error::ServerCertNotFound(cert_path.clone()))?;
+            let cert_file =
+                cert_file.map_err(|_| Error::ServerCertNotFound(cert_path.to_owned()))?;
             let certs = certs(&mut BufReader::new(cert_file));
             let certs = certs.map_err(|_| Error::InvalidServerCert(cert_path.to_string()))?;
 
             // Get private key
             let key_file = File::open(&key_path);
-            let key_file = key_file.map_err(|_| ServerKeyNotFound(key_path.clone()))?;
+            let key_file = key_file.map_err(|_| ServerKeyNotFound(key_path.to_owned()))?;
             let keys = rsa_private_keys(&mut BufReader::new(key_file));
-            let keys = keys.map_err(|_| Error::InvalidServerKey(key_path.clone()))?;
+            let keys = keys.map_err(|_| Error::InvalidServerKey(key_path.to_owned()))?;
 
             // Get the first key
             let key = match keys.first() {
                 Some(k) => k.clone(),
-                None => return Err(Error::InvalidServerKey(key_path.clone())),
+                None => return Err(Error::InvalidServerKey(key_path.to_owned())),
             };
 
             (certs, key)
@@ -335,7 +336,7 @@ impl Server {
         // client authentication with a CA. CA isn't required otherwise
         let mut server_config = {
             let ca_file = File::open(ca_path);
-            let ca_file = ca_file.map_err(|_| Error::CaFileNotFound(ca_path.clone()))?;
+            let ca_file = ca_file.map_err(|_| Error::CaFileNotFound(ca_path.to_owned()))?;
             let ca_file = &mut BufReader::new(ca_file);
             let mut store = RootCertStore::empty();
             let o = store.add_pem_file(ca_file);

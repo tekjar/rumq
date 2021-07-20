@@ -166,10 +166,7 @@ impl LastWill {
         len
     }
 
-    fn read(
-        connect_flags: u8,
-        mut bytes: &mut Bytes,
-    ) -> Result<Option<LastWill>, Error> {
+    fn read(connect_flags: u8, mut bytes: &mut Bytes) -> Result<Option<LastWill>, Error> {
         let last_will = match connect_flags & 0b100 {
             0 if (connect_flags & 0b0011_1000) != 0 => {
                 return Err(Error::IncorrectPacketFormat);
@@ -204,8 +201,6 @@ impl LastWill {
         Ok(connect_flags)
     }
 }
-
-
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Login {
@@ -272,7 +267,6 @@ impl Login {
         (self.username == *username) && (self.password == *password)
     }
 }
-
 
 #[cfg(test)]
 mod test {
