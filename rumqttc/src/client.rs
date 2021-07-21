@@ -128,7 +128,7 @@ impl AsyncClient {
     }
 
     /// Sends a MQTT Subscribe for multiple topics to the eventloop
-    pub async fn subscribe_many<T>(&mut self, topics: T) -> Result<(), ClientError>
+    pub async fn subscribe_many<T>(&self, topics: T) -> Result<(), ClientError>
     where
         T: IntoIterator<Item = SubscribeFilter>,
     {
@@ -139,7 +139,7 @@ impl AsyncClient {
     }
 
     /// Sends a MQTT Subscribe for multiple topics to the eventloop
-    pub fn try_subscribe_many<T>(&mut self, topics: T) -> Result<(), ClientError>
+    pub fn try_subscribe_many<T>(&self, topics: T) -> Result<(), ClientError>
     where
         T: IntoIterator<Item = SubscribeFilter>,
     {
